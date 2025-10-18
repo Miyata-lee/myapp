@@ -1,0 +1,49 @@
+name: Deploy Python App to EC2
+
+on:
+  push:
+    branches:
+      - main   # runs when you push to main branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Deploy to EC2 via SSH
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USER }}
+        key: ${{ secrets.EC2_KEY }}
+        script: |
+          echo "🚀 Starting deployment on EC2"
+
+          # Update packages and install dependencies
+          sudo yum update -y
+          sudo yum install -y git python3-pip
+
+          # Create or move into the app directory
+          mkdir -p ${{ secrets.APP_DIR }}
+          cd ${{ secrets.APP_DIR }}
+
+          # Clone repo if not exists, else pull latest changes
+          if [ ! -d ".git" ]; then
+            git clone https://github.com/${{ github.repository }} .
+          else
+            git pull origin main
+          fi
+
+          # Install Python dependencies
+          pip3 install -r requirements.txt
+
+          # Kill any running Flask app
+          pkill -f "python3 app.py" || true
+
+          # Run the app in background
+          nohup python3 app.py > app.log 2>&1 &
+
+          echo "✅ Deployment complete!"

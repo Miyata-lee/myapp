@@ -46,4 +46,4 @@ jobs:
           # Run the app in background
           nohup python3 app.py > app.log 2>&1 &
 
-          echo "✅ Deployment complete!"
+          echo "✅ Deployment Complete!"
